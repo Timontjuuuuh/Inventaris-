@@ -14,77 +14,61 @@ interface LookupResultaat {
   merk?: string;
 }
 
+interface VoorinvulData {
+  barcode: string;
+  naam?: string;
+  omschrijving?: string;
+  categorie?: string;
+}
+
 function NieuwFormulier() {
   const searchParams = useSearchParams();
   const barcode = searchParams.get("barcode") || "";
 
-  const [laden, setLaden] = useState(false);
   const [lookupStatus, setLookupStatus] = useState<"idle" | "laden" | "gevonden" | "niet-gevonden">("idle");
-  const [voorinvulData, setVoorinvulData] = useState<{ barcode: string; naam?: string; omschrijving?: string; categorie?: string }>({ barcode });
+  const [voorinvulData, setVoorinvulData] = useState<VoorinvulData>({ barcode });
+  const [formKey, setFormKey] = useState(0);
 
   useEffect(() => {
     if (!barcode) return;
 
-    setLaden(true);
     setLookupStatus("laden");
 
     fetch(`/api/barcode-lookup/${encodeURIComponent(barcode)}`)
       .then((r) => r.json())
       .then((data: LookupResultaat) => {
-        if (data.gevonden) {
-          const naam = data.merk
-            ? `${data.merk} - ${data.naam}`
-            : data.naam || "";
-
+        if (data.gevonden && data.naam) {
+          const naam = data.merk ? `${data.merk} - ${data.naam}` : data.naam;
           setVoorinvulData({
             barcode,
             naam,
             omschrijving: data.omschrijving || "",
             categorie: data.categorie || "",
           });
+          setFormKey((k) => k + 1);
           setLookupStatus("gevonden");
         } else {
           setLookupStatus("niet-gevonden");
         }
       })
-      .catch(() => setLookupStatus("niet-gevonden"))
-      .finally(() => setLaden(false));
+      .catch(() => setLookupStatus("niet-gevonden"));
   }, [barcode]);
 
   return (
     <div>
       {barcode && lookupStatus !== "idle" && (
-        <div
-          className={`mx-0 mb-4 rounded-2xl px-4 py-3 flex items-center gap-3 text-sm ${
-            lookupStatus === "laden"
-              ? "bg-blue-50 text-blue-700"
-              : lookupStatus === "gevonden"
-              ? "bg-green-50 text-green-700"
-              : "bg-slate-100 text-slate-500"
-          }`}
-        >
-          {lookupStatus === "laden" && (
-            <>
-              <Loader2 size={18} className="animate-spin shrink-0" />
-              <span>Product opzoeken in online database...</span>
-            </>
-          )}
-          {lookupStatus === "gevonden" && (
-            <>
-              <CheckCircle size={18} className="shrink-0" />
-              <span>Product gevonden en vooringevuld</span>
-            </>
-          )}
-          {lookupStatus === "niet-gevonden" && (
-            <>
-              <HelpCircle size={18} className="shrink-0" />
-              <span>Product niet gevonden — vul zelf in</span>
-            </>
-          )}
+        <div className={`mb-4 rounded-2xl px-4 py-3 flex items-center gap-3 text-sm ${
+          lookupStatus === "laden" ? "bg-blue-50 text-blue-700" :
+          lookupStatus === "gevonden" ? "bg-green-50 text-green-700" :
+          "bg-slate-100 text-slate-500"
+        }`}>
+          {lookupStatus === "laden" && <><Loader2 size={18} className="animate-spin shrink-0" /><span>Product opzoeken...</span></>}
+          {lookupStatus === "gevonden" && <><CheckCircle size={18} className="shrink-0" /><span>Product gevonden en vooringevuld</span></>}
+          {lookupStatus === "niet-gevonden" && <><HelpCircle size={18} className="shrink-0" /><span>Niet gevonden — vul zelf in</span></>}
         </div>
       )}
 
-      {!laden && <OnderdeelForm modus="nieuw" initieleData={voorinvulData} />}
+      <OnderdeelForm key={formKey} modus="nieuw" initieleData={voorinvulData} />
     </div>
   );
 }
