@@ -1,0 +1,25 @@
+generator client {
+  provider = "prisma-client"
+  output   = "../app/generated/prisma"
+}
+
+datasource db {
+  provider = "sqlite"
+}
+
+model Onderdeel {
+  id          Int      @id @default(autoincrement())
+  barcode     String?  @unique
+  naam        String
+  omschrijving String?
+  categorie   String?
+  aantal      Int      @default(0)
+  minimumAantal Int    @default(0)
+  locatie     String?
+  inkoopprijs Float?
+  verkoopprijs Float?
+  leverancier String?
+  notities    String?
+  aangemaakt  DateTime @default(now())
+  bijgewerkt  DateTime @updatedAt
+}
