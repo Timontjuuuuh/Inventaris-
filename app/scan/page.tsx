@@ -47,8 +47,18 @@ export default function ScanPage() {
       scannerInstance.current = html5QrCode;
 
       await html5QrCode.start(
-        { facingMode: "environment" },
-        { fps: 10, qrbox: { width: 250, height: 150 }, aspectRatio: 1.0 },
+        {
+          facingMode: "environment",
+          // Continuous autofocus voor snellere herkenning op iPhone
+          advanced: [{ focusMode: "continuous" } as MediaTrackConstraintSet],
+        },
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        {
+          fps: 15,
+          qrbox: { width: 280, height: 120 },
+          aspectRatio: 1.7777778,
+          experimentalFeatures: { useBarCodeDetectorIfSupported: true },
+        } as any,
         async (decodedText: string) => {
           await html5QrCode.stop();
           setActief(false);
