@@ -14,24 +14,16 @@ interface LookupResultaat {
   merk?: string;
 }
 
-interface VoorinvulData {
-  barcode: string;
-  naam?: string;
-  omschrijving?: string;
-  categorie?: string;
-}
-
 function NieuwFormulier() {
   const searchParams = useSearchParams();
   const barcode = searchParams.get("barcode") || "";
 
   const [lookupStatus, setLookupStatus] = useState<"idle" | "laden" | "gevonden" | "niet-gevonden">("idle");
-  const [voorinvulData, setVoorinvulData] = useState<VoorinvulData>({ barcode });
+  const [extraData, setExtraData] = useState<{ naam?: string; omschrijving?: string; categorie?: string }>({});
   const [formKey, setFormKey] = useState(0);
 
   useEffect(() => {
     if (!barcode) return;
-
     setLookupStatus("laden");
 
     fetch(`/api/barcode-lookup/${encodeURIComponent(barcode)}`)
@@ -39,12 +31,7 @@ function NieuwFormulier() {
       .then((data: LookupResultaat) => {
         if (data.gevonden && data.naam) {
           const naam = data.merk ? `${data.merk} - ${data.naam}` : data.naam;
-          setVoorinvulData({
-            barcode,
-            naam,
-            omschrijving: data.omschrijving || "",
-            categorie: data.categorie || "",
-          });
+          setExtraData({ naam, omschrijving: data.omschrijving || "", categorie: data.categorie || "" });
           setFormKey((k) => k + 1);
           setLookupStatus("gevonden");
         } else {
@@ -68,7 +55,11 @@ function NieuwFormulier() {
         </div>
       )}
 
-      <OnderdeelForm key={formKey} modus="nieuw" initieleData={voorinvulData} />
+      <OnderdeelForm
+        key={formKey}
+        modus="nieuw"
+        initieleData={{ barcode, ...extraData }}
+      />
     </div>
   );
 }
